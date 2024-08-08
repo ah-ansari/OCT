@@ -31,13 +31,6 @@ python src/clf_oct.py --dataset <dataset_name> --sigma 0.01 --p 0.1 --n 2
 The model requires parameters sigma, p, and n. If not specified, default values will be employed.
 
 
-To train and evaluate the baselines, run:
-```
-python src/clf_xxx.py --dataset <dataset_name>
-```
-`xxx` indicate the name of the baseline (e.g., `clf_exposure.py` is the implementation of Exposure baseline). Please note that the code for the Original, Pipeline, Energy, and ReAct methods resides within the `clf_original.py` file.
-
-
 ## Counterfactual Explanations Experiment
 
 For the counterfactual experiment, first run the code for our model (OCT) and Original model with `--save` option to save the classification models in the `saves_model/` folder:
