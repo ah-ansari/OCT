@@ -1,10 +1,6 @@
-# OCT
-The official implementation of the paper "Out-of-Distribution Aware Classification for Tabular Data" CIKM 2024.
-
-
 # Out-Of-Distribution Aware Classification for Tabular Data
 
-We've provided the source code for the implementations discussed in the paper, and the code for all baseline models. The experiments were performed exclusively on the CPU, without utilizing any GPU.
+The official implementation of the paper "Out-of-Distribution Aware Classification for Tabular Data", presented in CIKM 2024.
 
 
 ## Requirements
