@@ -1,0 +1,62 @@
+1. __init__.py:
+	* commented benchmark
+2. recourse_methods\__init__.py
+	* remove unsued methods
+3. recourse_methods\catalog\__init__.py
+	* comment unsued methods
+4. recourse_methods\processing\counterfactuals.py
+	* change check_counterfactuals funcion, so that it will set the ones without predict==1 as nan
+5. models\catalog\ANN_TF\model_ann.py	
+	* fix tesnorflow related errors. CARLA uses tf v1 but we haevtf v2.
+6. models\catalog\Linear_TF\model_linear.py
+	* fix tesnorflow related errors. CARLA uses tf v1 but we haevtf v2.
+7. recourse_methods\autoencoder\models\autoencoder.py
+	* fix tesnorflow related errors. CARLA uses tf v1 but we haevtf v2.
+8. recourse_methods\autoencoder\losses\losses.py
+	* fix tesnorflow related errors. CARLA uses tf v1 but we haevtf v2.	
+	
+Growing Spheres changes:	
+9. recourse_methods\catalog\growing_spheres\library\gs_counterfactuals.py
+	* apply clipping to [0, 1]
+	* check for the target class as 1. CARLA considers cfs as those changing to the class different from the original class of the query. But, we consider query from class 0 and target class 1.
+	
+CCHVAE changes:
+10. recourse_methods\autoencoder\models\vae.py
+	* set device as cpu
+11. recourse_methods\catalog\cchvae\model.py
+	* set device as cpu
+	* change the chekcings for target class to be 1
+
+Revise:
+12. recourse_methods\catalog\revise\model.py
+	* set device as cpu
+	* use predict_proba_diff instead of predict_proba function. Since, predict_proba returns numpy array.
+	* The above is in two functions ()
+	
+CRUD:
+13. recourse_methods\catalog\crud\library\crud.py
+	* set device to cpu
+	* changed from predict_proba to predict_proba_diff
+14. recourse_methods\autoencoder\models\csvae.py
+	* added sigmoid as the final activation function to make the final values be between 0 and 1
+
+FeatureTweak:
+15. recourse_methods\catalog\feature_tweak\model.py
+	* added MlModel to the list of the first if in def predict function
+	* added class_labels as input to handle the multi-class case
+	* Probably this is a bug, the model should check that the model predicts another label, not the tree (line )
+	
+processing:
+16. recourse_methods\processing\counterfactuals.py
+	* modified the line that gets the prediction to only include those that are not nan	
+	
+	
+growing spheres, cchvae: added sklearn to the list of supported models.
+
+Face:
+17. recourse_methods\catalog\face\model.py
+    * changed the data to df_train. In original code, df was used which is wrong (only training data should be used). Also, used only clean data by applying the OOD oracle.
+18. recourse_methods\catalog\face\library\face_method.py
+    * We consider all the features to be mutable, the current code produces an error when the list of immutable features is empty, applied changes to resolve this issue.s
+19. recourse_methods\catalog\face\library\face_method.py
+    * There is a bug in the code that they do not change the index of the factual sample after a subsample of the data is selected randomly in line 40. I added some modification to handle that. I found this bug from an error in the case that index of the factual sample is larger than the subsample size.

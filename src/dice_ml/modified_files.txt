@@ -1,0 +1,12 @@
+These are the list of modifications applied to the dice implemnetations.
+The modifications are due to teh following:
+1. To handle the multi class. The current implementation only considers two-class case, but our problem is multi-class.
+2. To handle the one-hot encoding with drop_first=True setting of carla.
+
+List of files changed:
+1. public_data_interface.py
+2. pytorch_model.py
+3. dice_pytorch_multi.py
+4. explainer_base.py
+5. dice.py
+6. dice_pytorch.py
