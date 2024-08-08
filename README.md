@@ -36,7 +36,7 @@ The model requires parameters sigma, p, and n. If not specified, default values 
 For the counterfactual experiment, first run the code for our model (OCT) and Original model with `--save` option to save the classification models in the `saves_model/` folder:
 
 ```
-python src/clf_oct.py --dataset <dataset_name> --sigma 0.001 --p 0.1 --n 2 --save
+python src/clf_oct.py --dataset <dataset_name> --sigma 0.01 --p 0.1 --n 2 --save
 python src/clf_original.py --dataset <dataset_name> --save
 ```
 
