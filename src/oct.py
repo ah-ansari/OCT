@@ -1,21 +1,35 @@
+"""
+This file contains the key functions essential for training the OCT model. These
+functions are responsible for generating OOD data and preparing the training
+dataset for the OCT model.
+"""
+
 import numpy as np
 from sklearn.ensemble import IsolationForest
+from typing import Tuple
 
 
-def sample_neighbor(x_sample, index_start_cat, sigma, p):
+def sample_neighbor(x_sample: np.ndarray, index_start_cat: int, sigma: float, p: float) -> np.ndarray:
     """
     Sample a point in the neighborhood of x.
 
-    This function samples a point in the neighborhood of the input point `x_sample`, by adding Gaussian noise to continuous features and perturbing categorical features with a certain probability.
+    This function samples a point in the neighborhood of the input point `x_sample`,
+    by adding Gaussian noise to continuous features and perturbing categorical features
+    with a certain probability.
 
     Parameters:
-    x_sample (array-like): The sample for which a random point in its neighborhood is created.
-    index_start_cat (int): The index where categorical features start in the data record. The dataset is assumed to have continuous features first, followed by categorical features.
-    sigma (float): The standard deviation of the Gaussian noise added to continuous features.
+    x_sample (array-like): The sample for which a random point in its neighborhood
+        is created.
+    index_start_cat (int): The index where categorical features start in the data
+        record. The dataset is assumed to have continuous features first, followed
+        by categorical features.
+    sigma (float): The standard deviation of the Gaussian noise added to continuous
+        features.
     p (float): The probability of perturbing each categorical feature.
 
     Returns:
-    array-like: A random sample in the neighborhood of `x_sample`, defined by `sigma` for continuous features and `p` for categorical features.
+    array-like: A random sample in the neighborhood of `x_sample`, defined by
+        `sigma` for continuous features and `p` for categorical features.
     """
     s = x_sample.copy()
 
@@ -27,7 +41,8 @@ def sample_neighbor(x_sample, index_start_cat, sigma, p):
     # sample categorical features
     for i in range(index_start_cat, x_sample.size):
         if np.random.uniform(0, 1) < p:
-            # randomly select a value from [0, 1], as our datasets only have binary features for categorical variables.
+            # randomly select a value from [0, 1], as our datasets only
+            # have binary features for categorical variables.
             s[i] = np.random.choice(2)
 
     s = np.clip(s, a_min=0, a_max=1)
@@ -35,17 +50,24 @@ def sample_neighbor(x_sample, index_start_cat, sigma, p):
     return s
 
 
-def create_ood(x, ood_oracle, index_start_cat, sigma, p, n):
+def create_ood(x: np.ndarray, ood_oracle: callable, index_start_cat: int, sigma: float, p: float, n: int) -> np.ndarray:
     """
     Generate boundary OOD samples.
 
-    This function generates `n` OOD samples that are close to the in-distribution points provided in `x`. The OOD samples are created by perturbing the continuous and categorical features of `x`.
+    This function generates `n` OOD samples that are close to the in-distribution
+    points provided in `x`. The OOD samples are created by perturbing the continuous
+    and categorical features of `x`.
 
     Parameters:
-    x (array-like): The in-distribution data points close to which OOD samples are created.
-    ood_oracle (callable): The OOD detection oracle function. It should return -1 for OOD samples and 1 for in-distribution samples.
-    index_start_cat (int): The index where categorical features start in the data record. The dataset is assumed to have continuous features first, followed by categorical features.
-    sigma (float): The standard deviation of the Gaussian noise added to continuous features.
+    x (array-like): The in-distribution data points close to which OOD samples
+        are created.
+    ood_oracle (callable): The OOD detection oracle function. It should return -1
+        for OOD samples and 1 for in-distribution samples.
+    index_start_cat (int): The index where categorical features start in the data
+        record. The dataset is assumed to have continuous features first, followed
+        by categorical features.
+    sigma (float): The standard deviation of the Gaussian noise added to continuous
+        features.
     p (float): The probability of perturbing each categorical feature.
     n (int): The number of OOD samples to be created.
 
@@ -82,16 +104,20 @@ def create_ood(x, ood_oracle, index_start_cat, sigma, p, n):
     return ood_points
 
 
-def sample_ood_uniform(ood_oracle, n, dim_cont, dim_cat):
+def sample_ood_uniform(ood_oracle: callable, n: int, dim_cont: int, dim_cat: int) -> np.ndarray:
     """
     Generate uniform OOD samples.
 
-    This function generates `n` OOD samples uniformly at random from the input feature space. It creates random samples and uses the OOD oracle to filter out in-distribution samples, ensuring the final set contains only OOD points.
+    This function generates `n` OOD samples uniformly at random from the input
+    feature space. It creates random samples and uses the OOD oracle to filter out
+    in-distribution samples, ensuring the final set contains only OOD points.
 
     Parameters:
-    ood_oracle (callable): The OOD detection oracle function. It should return -1 for OOD samples and 1 for in-distribution samples.
+    ood_oracle (callable): The OOD detection oracle function. It should return -1
+        for OOD samples and 1 for in-distribution samples.
     n (int): The number of OOD samples to be created.
-    dim_cont (int): The number of continuous features in the data record. The dataset is assumed to have continuous features first, followed by categorical features.
+    dim_cont (int): The number of continuous features in the data record. The dataset
+        is assumed to have continuous features first, followed by categorical features.
     dim_cat (int): The number of categorical features in the data record.
 
     Returns:
@@ -119,18 +145,25 @@ def sample_ood_uniform(ood_oracle, n, dim_cont, dim_cat):
     return ood_points
 
 
-def create_training_data(x, y, ood_oracle, index_start_cat, sigma, p, n, class_ood):
+def create_training_data(x: np.ndarray, y: np.ndarray, ood_oracle: callable, index_start_cat: int, sigma: float,
+                         p: float, n: int, class_ood: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Create the training data for the OOD-Aware model.
 
-    This function creates the data used for training our OOD-aware model by augmenting the in-distribution data `x` (features) and `y` (labels) with boundary OOD samples.
+    This function creates the data used for training our OOD-aware model by
+    augmenting the in-distribution data `x` (features) and `y` (labels) with
+    boundary OOD samples.
 
     Parameters:
     x (array-like): In-distribution training data, features.
     y (array-like): In-distribution training data, labels.
-    ood_oracle (callable): The OOD detection oracle function. It should return -1 for OOD samples and 1 for in-distribution samples.
-    index_start_cat (int): The index where categorical features start in the data record. The dataset is assumed to have continuous features first, followed by categorical features.
-    sigma (float): The standard deviation of the Gaussian noise added to continuous features.
+    ood_oracle (callable): The OOD detection oracle function. It should return -1
+        for OOD samples and 1 for in-distribution samples.
+    index_start_cat (int): The index where categorical features start in the data
+        record. The dataset is assumed to have continuous features first, followed
+        by categorical features.
+    sigma (float): The standard deviation of the Gaussian noise added to continuous
+        features.
     p (float): The probability of perturbing each categorical feature.
     n (int): The number of OOD samples to be created.
     class_ood (int): The class label to be assigned to OOD samples.
@@ -148,11 +181,12 @@ def create_training_data(x, y, ood_oracle, index_start_cat, sigma, p, n, class_o
     return x_oct, y_oct
 
 
-def create_ood_oracle(x):
+def create_ood_oracle(x: np.ndarray) -> IsolationForest:
     """
     Create an OOD detection oracle using Isolation Forest.
 
-    This function trains an Isolation Forest model on the provided in-distribution data `x`.
+    This function trains an Isolation Forest model on the provided in-distribution
+    data `x`.
 
     Parameters:
     x (array-like): The in-distribution data used to train the OOD oracle.

@@ -1,3 +1,48 @@
+"""
+This script prepares data for the experiments conducted in the paper.
+
+### Datasets:
+- Cover, Dilbert, Jannis: These datasets must be downloaded and placed in the 'datasets/' folder. They do not
+  include public train-test splits, so five-fold cross-validation is applied. These datasets are loaded using
+  functions from the 'tools.py' file.
+- Adult, Compas, GMSC, Heloc: These datasets are automatically loaded from the CARLA library, which provides
+  predefined public train-test splits used in our experiments.
+
+Note: All datasets follow a format where continuous features precede categorical features. Additionally,
+all categorical features are binary. Our method is implemented based on these two assumptions.
+
+### Preprocessing:
+- Continuous features are scaled using a MinMax scaler.
+- Categorical features remain unchanged since they are binary across all datasets.
+
+### Experiment Settings:
+The script prepares data according to two test settings:
+1. Setting I (ood_class): One class is considered OOD, and the script adjusts the training and test data accordingly.
+2. Setting II (all_in_dist): The entire dataset is treated as in-distribution, and OOD test samples are synthesized.
+
+For both settings, the script generates:
+- In-distribution training data: Used as input for the OCT model and other baselines.
+- In-distribution and OOD testing sets: Used for model evaluation. In Setting I, each class is treated as
+  the OOD class once. In Setting II, four different OOD test sets are synthesized.
+
+### Output:
+- The prepared data is saved in the 'saves_data/' folder as `.npz` files.
+- Files are named `[dataset_name]_[setting_type]_[fold_number].npz` for datasets with cross-validation, and
+  `[dataset_name]_[setting_type].npz` for CARLA datasets.
+
+### Key Functions:
+- `prepare_data_cross_validation_all_in_dist`: Prepares data according to Setting II for datasets requiring
+  five-fold cross-validation.
+- `prepare_data_carla_all_in_dist`: Prepares data according to Setting II for CARLA datasets (no cross-validation
+  required).
+- `prepare_data_carla_ood_class`: Prepares data according to Setting I for CARLA datasets (no cross-validation
+  required).
+- `prepare_data_cross_validation_ood_class`: Prepares data according to Setting I for datasets requiring
+  five-fold cross-validation, treating one class as OOD.
+
+The script saves the generated datasets for subsequent use in model training and evaluation.
+"""
+
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn import preprocessing
@@ -12,7 +57,7 @@ warnings.filterwarnings('ignore')
 save_folder = 'saves_data/'
 
 
-def prepare_data_cv(dataset_name):
+def prepare_data_cross_validation_all_in_dist(dataset_name):
     # loading the dataset
     # each dataset is assumed to be in the format of first continues features and then categorical features
     x, y, dim_cont = tools.load_dataset(dataset_name)
@@ -60,7 +105,7 @@ def prepare_data_cv(dataset_name):
                                            dim_cat=dim_cat)
 
         # saving the created sets
-        file_name = save_folder + dataset_name + "_" + str(i)
+        file_name = save_folder + dataset_name + "_all_in_dist_" + str(i)
         np.savez(file_name, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, dim_cont=dim_cont,
                  ood_test1=ood_test1, ood_test2=ood_test2, ood_test3=ood_test3, ood_test4=ood_test4)
 
@@ -68,7 +113,7 @@ def prepare_data_cv(dataset_name):
     return
 
 
-def prepare_data_carla(dataset_name):
+def prepare_data_carla_all_in_dist(dataset_name):
     print(dataset_name)
 
     dataset = cf.load_dataset(dataset_name)
@@ -97,7 +142,7 @@ def prepare_data_carla(dataset_name):
                                        dim_cat=dim_cat)
 
     # saving the created sets
-    file_name = save_folder + dataset_name
+    file_name = save_folder + dataset_name + "_all_in_dist"
     np.savez(file_name, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, dim_cont=dim_cont,
              ood_test1=ood_test1, ood_test2=ood_test2, ood_test3=ood_test3, ood_test4=ood_test4)
 
@@ -115,73 +160,7 @@ def fix_y_ood_class(y, ood_class):
     return y
 
 
-def prepare_data_carla_ood_class(dataset_name):
-    print(dataset_name)
-
-    dataset = cf.load_dataset(dataset_name)
-    x_train, y_train, x_test, y_test, _ = cf.load_from_dataset(dataset)
-
-    print("number of samples in each class:")
-    for c in np.unique(y_train):
-        tools.print_size_percentage("class " + str(c), y_train[y_train == c].size, y_train.size)
-
-    dim_cont = len(dataset.continuous)
-    dim_cat = len(dataset.categorical)
-
-    print("dim_cont: ", dim_cont)
-    print("dim_cat: ", dim_cat)
-
-    print("\n")
-
-    for ood_class in np.unique(y_train):
-        print("* ood_class: ", ood_class)
-
-        y_train_fix = fix_y_ood_class(y_train.copy(), ood_class)
-        y_test_fix = fix_y_ood_class(y_test.copy(), ood_class)
-
-        x_train_in = x_train[y_train_fix != -1]
-        y_train_in = y_train_fix[y_train_fix != -1]
-
-        x_test_in = x_test[y_test_fix != -1]
-        y_test_in = y_test_fix[y_test_fix != -1]
-
-        x_ood = np.concatenate((x_train[y_train_fix == -1], x_test[y_test_fix == -1]), axis=0)
-
-        print("x_in shape: ", x_train_in.shape)
-        print("x_ood shape: ", x_ood.shape)
-
-        # training the ood oracle
-        ood_oracle = oct.create_ood_oracle(x_train_in)
-
-        pred = ood_oracle.predict(x_ood)
-        x_ood = x_ood[pred == -1]
-
-        print("x_ood shape (after filtering): ", x_ood.shape)
-        print("x_test shape (before applying min with x_test): ", x_test_in.shape)
-
-        m = min(x_ood.shape[0], x_test_in.shape[0])
-        x_test_in = x_test_in[:m]
-        y_test_in = y_test_in[:m]
-        x_ood = x_ood[:m]
-
-        print("sizes after applying min: ")
-        print("x_test: ", x_test_in.shape)
-        print("x_ood: ", x_ood.shape)
-
-        print("number of samples in each class of the test set:")
-        for c in np.unique(y_test_in):
-            tools.print_size_percentage("class " + str(c), y_test_in[y_test_in == c].size, y_test_in.size)
-
-        # saving the created sets
-        file_name = save_folder + dataset_name + "_ood_class" + str(ood_class)
-        np.savez(file_name, x_train=x_train_in, x_test=x_test_in, y_train=y_train_in, y_test=y_test_in,
-                 dim_cont=dim_cont, ood_test1=x_ood, ood_test2=x_ood, ood_test3=x_ood, ood_test4=x_ood)
-        print("===================================================")
-    print("\n---------------------------------------------------------------------\n")
-    return
-
-
-def prepare_data_cv_ood_class(dataset_name):
+def prepare_data_cross_validation_ood_class(dataset_name):
     # loading the dataset
     x, y, dim_cont = tools.load_dataset(dataset_name)
     x = x.astype(float)
@@ -249,7 +228,7 @@ def prepare_data_cv_ood_class(dataset_name):
             # saving the created sets
             file_name = save_folder + dataset_name + "_ood_class" + str(ood_class) + "_" + str(i)
             np.savez(file_name, x_train=x_train_in, x_test=x_test_in, y_train=y_train_in, y_test=y_test_in,
-                     dim_cont=dim_cont, ood_test1=x_ood, ood_test2=x_ood, ood_test3=x_ood, ood_test4=x_ood)
+                     dim_cont=dim_cont, ood_test=x_ood)
 
             print("\n----------------------------------\n")
         print("===================================================")
@@ -257,10 +236,76 @@ def prepare_data_cv_ood_class(dataset_name):
     return
 
 
+def prepare_data_carla_ood_class(dataset_name):
+    print(dataset_name)
+
+    dataset = cf.load_dataset(dataset_name)
+    x_train, y_train, x_test, y_test, _ = cf.load_from_dataset(dataset)
+
+    print("number of samples in each class:")
+    for c in np.unique(y_train):
+        tools.print_size_percentage("class " + str(c), y_train[y_train == c].size, y_train.size)
+
+    dim_cont = len(dataset.continuous)
+    dim_cat = len(dataset.categorical)
+
+    print("dim_cont: ", dim_cont)
+    print("dim_cat: ", dim_cat)
+
+    print("\n")
+
+    for ood_class in np.unique(y_train):
+        print("* ood_class: ", ood_class)
+
+        y_train_fix = fix_y_ood_class(y_train.copy(), ood_class)
+        y_test_fix = fix_y_ood_class(y_test.copy(), ood_class)
+
+        x_train_in = x_train[y_train_fix != -1]
+        y_train_in = y_train_fix[y_train_fix != -1]
+
+        x_test_in = x_test[y_test_fix != -1]
+        y_test_in = y_test_fix[y_test_fix != -1]
+
+        x_ood = np.concatenate((x_train[y_train_fix == -1], x_test[y_test_fix == -1]), axis=0)
+
+        print("x_in shape: ", x_train_in.shape)
+        print("x_ood shape: ", x_ood.shape)
+
+        # training the ood oracle
+        ood_oracle = oct.create_ood_oracle(x_train_in)
+
+        pred = ood_oracle.predict(x_ood)
+        x_ood = x_ood[pred == -1]
+
+        print("x_ood shape (after filtering): ", x_ood.shape)
+        print("x_test shape (before applying min with x_test): ", x_test_in.shape)
+
+        m = min(x_ood.shape[0], x_test_in.shape[0])
+        x_test_in = x_test_in[:m]
+        y_test_in = y_test_in[:m]
+        x_ood = x_ood[:m]
+
+        print("sizes after applying min: ")
+        print("x_test: ", x_test_in.shape)
+        print("x_ood: ", x_ood.shape)
+
+        print("number of samples in each class of the test set:")
+        for c in np.unique(y_test_in):
+            tools.print_size_percentage("class " + str(c), y_test_in[y_test_in == c].size, y_test_in.size)
+
+        # saving the created sets
+        file_name = save_folder + dataset_name + "_ood_class" + str(ood_class)
+        np.savez(file_name, x_train=x_train_in, x_test=x_test_in, y_train=y_train_in, y_test=y_test_in,
+                 dim_cont=dim_cont, ood_test=x_ood)
+        print("===================================================")
+    print("\n---------------------------------------------------------------------\n")
+    return
+
+
 for data in ['adult', 'compas', 'gmsc', 'heloc']:
-    prepare_data_carla(data)
+    prepare_data_carla_all_in_dist(data)
     prepare_data_carla_ood_class(data)
 
-for data in ['cover', 'jannis', 'dilbert', 'fabert']:
-    prepare_data_cv(data)
-    prepare_data_cv_ood_class(data)
+for data in ['cover', 'jannis', 'dilbert']:
+    prepare_data_cross_validation_all_in_dist(data)
+    prepare_data_cross_validation_ood_class(data)

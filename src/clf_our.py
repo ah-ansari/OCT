@@ -79,7 +79,7 @@ x_train_robust, y_train_robust = oct.create_training_data(x=x_train, y=y_train,
                                                           ood_oracle=ood_oracle.predict,
                                                           index_start_cat=dim_cont,
                                                           sigma=args.sigma,
-                                                          cat_p=args.cat_p,
+                                                          p=args.cat_p,
                                                           n=N, class_ood=class_noise)
 
 ood_time = time.time() - ood_start_time

@@ -1,3 +1,15 @@
+"""
+This file implements functions and classes for classification algorithms, including
+Deep Neural Networks (DNNs) and decision tree-based models using XGBoost.
+
+The two key functions are:
+* `make_model_dnn`: Trains a 3-layer DNN with specified layer sizes on a given dataset,
+  featuring support for early stopping and optional class weighting to handle imbalanced datasets.
+
+* `make_model_tree`: Trains a decision tree-based model using XGBoost, with options
+  to apply class weights for handling imbalanced datasets.
+"""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,12 +19,13 @@ from torch.utils.data import TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
 import xgboost
+from typing import List, Callable, Tuple, Optional
 
 import tools
 
 
 class DNNModel(nn.Module):
-    def __init__(self, n_inputs, n_classes, layers):
+    def __init__(self, n_inputs: int, n_classes: int, layers: List[int]):
         super(DNNModel, self).__init__()
 
         if len(layers) != 3:
@@ -26,7 +39,7 @@ class DNNModel(nn.Module):
         self.lin3 = nn.Linear(layers[1], layers[2])
         self.lin4 = nn.Linear(layers[2], n_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.lin1(x))
         x = F.relu(self.lin2(x))
         x = F.relu(self.lin3(x))
@@ -34,16 +47,15 @@ class DNNModel(nn.Module):
         return x
 
 
-def init_weights(m):
+def init_weights(m: nn.Module) -> None:
     if isinstance(m, nn.Linear):
         torch.nn.init.xavier_uniform_(m.weight)
         m.bias.data.fill_(0.01)
-
     return
 
 
-def create_predictor(model, device):
-    def predict(x):
+def create_predictor(model: nn.Module, device: torch.device) -> Callable[[np.ndarray], np.ndarray]:
+    def predict(x: np.ndarray) -> np.ndarray:
         with torch.no_grad():
             tensor_x = torch.tensor(x).float().to(device)
             output = model(tensor_x)
@@ -55,8 +67,10 @@ def create_predictor(model, device):
     return predict
 
 
-def make_model_dnn(x, y, batch_size=64, lr=0.001, layers=None, robust=False, apply_weight=True, esp=20,
-                   device='cpu', verbose=False):
+def make_model_dnn(x: np.ndarray, y: np.ndarray, batch_size: int = 64, lr: float = 0.001,
+                   layers: Optional[List[int]] = None, robust: bool = False, apply_weight: bool = True,
+                   esp: int = 20, device: str = 'cpu', verbose: bool = False) \
+        -> Tuple[nn.Module, Callable[[np.ndarray], np.ndarray]]:
     if layers is None:
         layers = [32, 16, 8]
     n_inputs = x.shape[1]
@@ -166,7 +180,8 @@ def make_model_dnn(x, y, batch_size=64, lr=0.001, layers=None, robust=False, app
     return model, predictor
 
 
-def make_model_tree(x, y, n_classes, max_depth, robust=False, apply_weight=False):
+def make_model_tree(x: np.ndarray, y: np.ndarray, n_classes: int, max_depth: int, robust: bool = False,
+                    apply_weight: bool = False) -> xgboost.XGBClassifier:
     # split the validation data
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=0)
 
