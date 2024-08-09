@@ -61,7 +61,7 @@ print("\n-----------------------------------------------------------------------
 print("---  Training the model  ---\n")
 model_o_start_time = time.time()
 
-model_o = models.make_model_tree(x=x_train, y=y_train, n_classes=n_classes, max_depth=max_depth, robust=False,
+model_o = models.make_model_tree(x=x_train, y=y_train, n_classes=n_classes, max_depth=max_depth, extra_ood_class=False,
                                  apply_weight=True)
 
 model_o_train_time = time.time() - model_o_start_time
@@ -102,8 +102,7 @@ clf_methods = {'pipeline': pipeline, 'original': model_o.predict}
 for ood_type, x_eval in x_evals.items():
     print("OOD ", ood_type)
     for method_name, predictor in clf_methods.items():
-        r = tools.expr_clf(method_name=method_name, predictor=predictor, x=x_eval, y=y_eval_clf, ood_type=ood_type,
-                           class_noise=class_noise)
+        r = tools.expr_clf(method_name=method_name, predictor=predictor, x=x_eval, y=y_eval_clf, class_ood=class_noise)
         result.update(r)
 
     print("")

@@ -5,7 +5,7 @@ import time
 
 
 def load_dataset(dataset):
-    path = 'clf_datasets/'
+    path = 'datasets/'
 
     if dataset == 'cover':
         return load_cover(path)
@@ -127,10 +127,10 @@ def print_parameters(args):
     return
 
 
-def expr_clf(method_name, predictor, x, y, ood_type, class_noise):
+def expr_clf(method_name, predictor, x, y, class_ood):
     print(method_name + "\n")
     evaluate_clf_general(predictor, x, y)
-    evaluate_clf(predictor, x, y, class_noise)
+    evaluate_clf(predictor, x, y, class_ood)
     print("---------------------------------------------")
 
     return

@@ -229,8 +229,7 @@ clf_methods = {'pipeline': pipeline, 'original': predictor_o, 'energy': predicto
 for ood_type, x_eval in x_evals.items():
     print("OOD ", ood_type)
     for method_name, predictor in clf_methods.items():
-        tools.expr_clf(method_name=method_name, predictor=predictor, x=x_eval, y=y_eval_clf, ood_type=ood_type,
-                       class_noise=class_noise)
+        tools.expr_clf(method_name=method_name, predictor=predictor, x=x_eval, y=y_eval_clf, class_ood=class_noise)
 
     print("")
 

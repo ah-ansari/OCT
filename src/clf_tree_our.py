@@ -80,7 +80,7 @@ ood_time = time.time() - ood_start_time
 model_s_start_time = time.time()
 
 model_s = models.make_model_tree(x=x_train_robust, y=y_train_robust, n_classes=n_classes, max_depth=max_depth,
-                                 robust=True, apply_weight=True)
+                                 extra_ood_class=True, apply_weight=True)
 
 model_s_train_time = time.time() - model_s_start_time
 
@@ -110,8 +110,7 @@ y_eval_clf = np.concatenate((y_test, np.full(y_test.size, class_noise)), axis=0)
 
 for ood_type, x_eval in x_evals.items():
     print("OOD ", ood_type)
-    r = tools.expr_clf(method_name="robust", predictor=model_s.predict, x=x_eval, y=y_eval_clf, ood_type=ood_type,
-                       class_noise=class_noise)
+    r = tools.expr_clf(method_name="robust", predictor=model_s.predict, x=x_eval, y=y_eval_clf, class_ood=class_noise)
     result.update(r)
 
     print("")

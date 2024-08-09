@@ -286,8 +286,7 @@ y_eval_clf = np.concatenate((y_test, np.full(y_test.size, class_noise)), axis=0)
 
 for ood_type, x_eval in x_evals.items():
     print("OOD ", ood_type)
-    tools.expr_clf(method_name='dk', predictor=predictor, x=x_eval, y=y_eval_clf, ood_type=ood_type,
-                   class_noise=class_noise)
+    tools.expr_clf(method_name='dk', predictor=predictor, x=x_eval, y=y_eval_clf, class_ood=class_noise)
 
     print("")
 

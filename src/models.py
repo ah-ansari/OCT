@@ -68,8 +68,8 @@ def create_predictor(model: nn.Module, device: torch.device) -> Callable[[np.nda
 
 
 def make_model_dnn(x: np.ndarray, y: np.ndarray, batch_size: int = 64, lr: float = 0.001,
-                   layers: Optional[List[int]] = None, robust: bool = False, apply_weight: bool = True,
-                   esp: int = 20, device: str = 'cpu', verbose: bool = False) \
+                   layers: Optional[List[int]] = None, extra_ood_class: bool = False, apply_weight: bool = True,
+                   esp: int = 20, device: torch.device = torch.device('cpu'), verbose: bool = False) \
         -> Tuple[nn.Module, Callable[[np.ndarray], np.ndarray]]:
     if layers is None:
         layers = [32, 16, 8]
@@ -93,9 +93,10 @@ def make_model_dnn(x: np.ndarray, y: np.ndarray, batch_size: int = 64, lr: float
     val_loader = torch.utils.data.DataLoader(data_val, batch_size=batch_size, shuffle=False, num_workers=0,
                                              pin_memory=True)
 
-    # class weights
-    if robust is True:
-        print("robust")
+    # class weights: set the weights according to the distribution of class labels, and also it is considered that
+    # the sample has an extra OOD class or not
+    if extra_ood_class is True:
+        print("The model has OOD as extra class")
         y_w = y[y != np.max(y)]
         c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_w), y=y_w)
         c_w /= np.sum(c_w)
@@ -180,13 +181,13 @@ def make_model_dnn(x: np.ndarray, y: np.ndarray, batch_size: int = 64, lr: float
     return model, predictor
 
 
-def make_model_tree(x: np.ndarray, y: np.ndarray, n_classes: int, max_depth: int, robust: bool = False,
+def make_model_tree(x: np.ndarray, y: np.ndarray, n_classes: int, max_depth: int, extra_ood_class: bool = False,
                     apply_weight: bool = False) -> xgboost.XGBClassifier:
     # split the validation data
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=0)
 
     # class weights
-    if robust is True:
+    if extra_ood_class is True:
         print("robust")
         y_w = y[y != np.max(y)]
         c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_w), y=y_w)
@@ -201,7 +202,7 @@ def make_model_tree(x: np.ndarray, y: np.ndarray, n_classes: int, max_depth: int
     for i, c in enumerate(y_train):
         s_w[i] = c_w[int(c)]
 
-    if robust is True:
+    if extra_ood_class is True:
         n_classes += 1
 
     model = xgboost.XGBClassifier(objective='multi:softprob', num_class=n_classes, max_depth=max_depth)

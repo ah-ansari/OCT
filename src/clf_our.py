@@ -13,62 +13,69 @@ warnings.filterwarnings('ignore')
 
 # Parameters
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str)
-parser.add_argument('--i', type=int, default=0)
-parser.add_argument('--cv', dest='cv', action='store_true')
-parser.set_defaults(cv=False)
-parser.add_argument('--sigma', type=float, default=0.01)
-parser.add_argument('--cat_p', type=float, default=0.1)
-parser.add_argument('--n', type=float, default=2)
-parser.add_argument('--esp', type=int, default=20)
-parser.add_argument('--lr', type=float, default=0.001)
-parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--save', dest='save', action='store_true')
-parser.set_defaults(save=False)
+
+parser.add_argument('--dataset', type=str,
+                    help="Dataset name.")
+parser.add_argument('--setting', type=str,
+                    help="Experiment setting: 'all_in_dist' or 'ood_class_d', where 'd' is the OOD class label.")
+parser.add_argument('--i', type=int, default=0,
+                    help="Run ID. For five-fold CV, range is 0-25; otherwise, 0-5.")
+parser.add_argument('--cv', action='store_true',
+                    help="Enable cross-validation if set.")
+parser.add_argument('--sigma', type=float, default=0.01,
+                    help="Sigma for Gaussian noise for continuous features.")
+parser.add_argument('--p', type=float, default=0.1,
+                    help="Perturbation probability for categorical features.")
+parser.add_argument('--n', type=float, default=2,
+                    help="Number of OOD samples, used in the form of a multiplier: number of OOD samples = n * size x.")
+parser.add_argument('--esp', type=int, default=20,
+                    help="Early stopping patience (epochs).")
+parser.add_argument('--lr', type=float, default=0.001,
+                    help="Learning rate.")
+parser.add_argument('--batch_size', type=int, default=64,
+                    help="Batch size.")
+parser.add_argument('--save', action='store_true',
+                    help="Save the trained model if set.")
+
 args = parser.parse_args()
 
 tools.print_parameters(args)
 
-# loading the data
-if args.cv is True:
+# Loading the data
+if args.cv:
     fold = args.i % 5
-    print("fold: ", fold)
-    data = np.load("saves_data/" + args.dataset + "_" + str(fold) + ".npz")
+    print("Fold:", fold)
+    data = np.load(f"saves_data/{args.dataset}{args.setting}_{fold}.npz")
 else:
-    data = np.load("saves_data/" + args.dataset + ".npz")
+    data = np.load(f"saves_data/{args.dataset}{args.setting}.npz")
 
 x_train = data['x_train']
-x_test = data['x_test']
 y_train = data['y_train']
-y_test = data['y_test']
-dim_cont = data['dim_cont']
-ood_test1 = data['ood_test1']
-ood_test2 = data['ood_test2']
-ood_test3 = data['ood_test3']
-ood_test4 = data['ood_test4']
 
+dim_cont = data['dim_cont']
 dim = x_train.shape[1]
 n_classes = np.unique(y_train).size
-class_noise = n_classes
 
-N = int(args.n * x_train.shape[0])
+# The class label considered for OOD samples, we consider the (k+1)th class for OOD.
+class_ood = n_classes
+
+n_ood = int(args.n * x_train.shape[0])
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-print("dim: ", dim)
-print("dim_cont: ", dim_cont)
-print("n_classes: ", n_classes)
-print("N: ", N)
-print("device: ", device)
+print("dim:", dim)
+print("dim_cont:", dim_cont)
+print("n_classes:", n_classes)
+print("n_ood:", n_ood)
+print("device:", device)
 
-# training the ood oracle
+# Training the OOD oracle
 if_start_time = time.time()
 ood_oracle = oct.create_ood_oracle(x_train)
 if_train_time = time.time() - if_start_time
 
 pred = ood_oracle.predict(x_train)
-tools.print_size_percentage("percentage of training data detected as OOD", pred[pred == -1].size, pred.size)
-
+tools.print_size_percentage("Percentage of training data detected as OOD", pred[pred == -1].size, pred.size)
 
 print("\n-------------------------------------------------------------------------------")
 print("---  Training the model  ---\n")
@@ -78,60 +85,68 @@ ood_start_time = time.time()
 x_train_robust, y_train_robust = oct.create_training_data(x=x_train, y=y_train,
                                                           ood_oracle=ood_oracle.predict,
                                                           index_start_cat=dim_cont,
-                                                          sigma=args.sigma,
-                                                          p=args.cat_p,
-                                                          n=N, class_ood=class_noise)
+                                                          sigma=args.sigma, p=args.p, n=n_ood,
+                                                          class_ood=class_ood)
 
 ood_time = time.time() - ood_start_time
 
+model_start_time = time.time()
 
-model_s_start_time = time.time()
+model_oct, predictor_oct = models.make_model_dnn(x=x_train_robust, y=y_train_robust, batch_size=args.batch_size,
+                                                 lr=args.lr, extra_ood_class=True, apply_weight=True, esp=args.esp,
+                                                 device=device)
 
-model_s, predictor_s = models.make_model_dnn(x=x_train_robust, y=y_train_robust, robust=True,
-                                             batch_size=args.batch_size, lr=args.lr, apply_weight=True, esp=args.esp,
-                                             device=device)
-
-model_s_train_time = time.time() - model_s_start_time
+model_train_time = time.time() - model_start_time
 
 
 # Evaluations
-
 def get_softmax_output(model, x):
     with torch.no_grad():
         tensor_x = torch.tensor(x).float().to(device)
         output = F.softmax(model(tensor_x)).data.cpu().numpy()
-
     return output
 
 
-x_eval1 = np.concatenate((x_test, ood_test1), axis=0)
-x_eval2 = np.concatenate((x_test, ood_test2), axis=0)
-x_eval3 = np.concatenate((x_test, ood_test3), axis=0)
-x_eval4 = np.concatenate((x_test, ood_test4), axis=0)
+# Prepare the test sets
+x_test = data['x_test']
+y_test = data['y_test']
 
-x_evals = {'1': x_eval1, '2': x_eval2, '3': x_eval3, '4': x_eval4}
+if args.setting == 'all_in_dist':
+    ood_test1 = data['ood_test1']
+    ood_test2 = data['ood_test2']
+    ood_test3 = data['ood_test3']
+    ood_test4 = data['ood_test4']
+
+    x_eval1 = np.concatenate((x_test, ood_test1), axis=0)
+    x_eval2 = np.concatenate((x_test, ood_test2), axis=0)
+    x_eval3 = np.concatenate((x_test, ood_test3), axis=0)
+    x_eval4 = np.concatenate((x_test, ood_test4), axis=0)
+
+    x_evals = {'1': x_eval1, '2': x_eval2, '3': x_eval3, '4': x_eval4}
+else:
+    ood_test = data['ood_test']
+    x_eval = np.concatenate((x_test, ood_test), axis=0)
+    x_evals = {'1': x_eval}
+
+# OOD test set is of equal size to the in_dist test set
+y_eval_clf = np.concatenate((y_test, np.full(y_test.size, class_ood)), axis=0)
 
 print("\n-------------------------------------------------------------------------------")
 print("---  OOD-Aware Classification Evaluations  ---\n")
 
-y_eval_clf = np.concatenate((y_test, np.full(y_test.size, class_noise)), axis=0)
-
 for ood_type, x_eval in x_evals.items():
-    print("OOD ", ood_type)
-    tools.expr_clf(method_name="robust", predictor=predictor_s, x=x_eval, y=y_eval_clf, ood_type=ood_type,
-                   class_noise=class_noise)
-
+    print("OOD", ood_type)
+    tools.expr_clf(method_name="OCT", predictor=predictor_oct, x=x_eval, y=y_eval_clf, class_ood=class_ood)
     print("")
-
 
 print("\n-------------------------------------------------------------------------------")
 print("---  Train time  ---\n")
 
-print("train_time if: ", if_train_time)
-print("train_time ood creation: ", ood_time)
-print("train_time robust: ", model_s_train_time)
+print("train_time if:", if_train_time)
+print("train_time ood creation:", ood_time)
+print("train_time model training:", model_train_time)
 
-# saving the model
-if args.save is True:
-    save_path = "saves_model/" + args.dataset + "_" + str(args.i)
-    torch.save(model_s.state_dict(), save_path + "_s")
+# Saving the model
+if args.save:
+    save_path = f"saves_model/{args.dataset}_{args.i}"
+    torch.save(model_oct.state_dict(), save_path + "_oct")
