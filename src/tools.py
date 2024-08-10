@@ -65,9 +65,7 @@ def load_jannis(path):
 
 
 def evaluate_clf_general(f_predict, x, y):
-    start_time = time.time()
     pred = f_predict(x)
-    run_time = time.time() - start_time
 
     if len(pred.shape) != 1:
         pred = np.argmax(pred, axis=1)
@@ -76,7 +74,6 @@ def evaluate_clf_general(f_predict, x, y):
     r = metrics.recall_score(y_true=y, y_pred=pred, average=None, zero_division=0)
     f1 = metrics.f1_score(y_true=y, y_pred=pred, average=None, zero_division=0)
 
-    print(f" prediction time: {run_time} seconds ")
     for i in range(p.size):
         print(f"class {i}    p: {p[i]:.4f} - r: {r[i]:.4f} - f1: {f1[i]:.4f}")
 
