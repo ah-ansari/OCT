@@ -1,4 +1,4 @@
-# Out-Of-Distribution Aware Classification for Tabular Data
+# OCT
 
 The official implementation of the paper "Out-of-Distribution Aware Classification for Tabular Data", presented in CIKM 2024.
 
