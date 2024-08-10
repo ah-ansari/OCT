@@ -45,9 +45,9 @@ tools.print_parameters(args)
 if args.cv:
     fold = args.i % 5
     print("Fold:", fold)
-    data = np.load(f"saves_data/{args.dataset}{args.setting}_{fold}.npz")
+    data = np.load(f"saves_data/{args.dataset}_{args.setting}_{fold}.npz")
 else:
-    data = np.load(f"saves_data/{args.dataset}{args.setting}.npz")
+    data = np.load(f"saves_data/{args.dataset}_{args.setting}.npz")
 
 x_train = data['x_train']
 y_train = data['y_train']
