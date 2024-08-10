@@ -1,5 +1,5 @@
 """
-This script trains the OCT model and evaluates its performance on OOD-aware classification task.
+This script implements the OCT model and evaluates its performance on OOD-aware classification task.
 It supports both Evaluation Setting I (ood_class) and Evaluation Setting II (all_in_dist).
 The script allows for various experimental configurations, including the choice of evaluation setting,
 applying cross-validation, and customization of OOD sample synthesis parameters. These configurations
@@ -88,17 +88,17 @@ print("---  Training the model  ---\n")
 print("Creating training OOD samples")
 ood_start_time = time.time()
 
-x_train_robust, y_train_robust = oct.create_training_data(x=x_train, y=y_train,
-                                                          ood_oracle=ood_oracle.predict,
-                                                          index_start_cat=dim_cont,
-                                                          sigma=args.sigma, p=args.p, n=n_ood,
-                                                          class_ood=class_ood)
+x_train_oct, y_train_oct = oct.create_training_data(x=x_train, y=y_train,
+                                                    ood_oracle=ood_oracle.predict,
+                                                    index_start_cat=dim_cont,
+                                                    sigma=args.sigma, p=args.p, n=n_ood,
+                                                    class_ood=class_ood)
 
 ood_time = time.time() - ood_start_time
 
 print("Training the model")
 model_start_time = time.time()
-model_oct, predictor_oct = models.make_model_dnn(x=x_train_robust, y=y_train_robust, batch_size=args.batch_size,
+model_oct, predictor_oct = models.make_model_dnn(x=x_train_oct, y=y_train_oct, batch_size=args.batch_size,
                                                  lr=args.lr, extra_ood_class=True, apply_weight=True, esp=args.esp,
                                                  device=device)
 model_time = time.time() - model_start_time

@@ -1,3 +1,8 @@
+"""
+This file contains auxiliary functions; mainly for loading datasets and conducting evaluations in OOD-aware
+classification experiment.
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn import metrics
@@ -64,6 +69,21 @@ def load_jannis(path):
     return x, y, x.shape[1]
 
 
+def print_size_percentage(name_str, n_samples, n_total):
+    percentage = (n_samples / n_total) * 100
+    print(name_str, ":   number ", n_samples, " percentage ", percentage)
+    return percentage
+
+
+def print_parameters(args):
+    print("Parameters:")
+    for k, v in vars(args).items():
+        print(k, " " * (20 - len(k)), v)
+    print("-------------------------------------------------------------------------------")
+
+    return
+
+
 def evaluate_clf_general(f_predict, x, y):
     pred = f_predict(x)
 
@@ -80,7 +100,7 @@ def evaluate_clf_general(f_predict, x, y):
     return
 
 
-def evaluate_clf(f_predict, x, y, class_noise):
+def evaluate_clf(f_predict, x, y, class_ood):
     start_time = time.time()
     pred = f_predict(x)
     run_time = time.time() - start_time
@@ -90,14 +110,14 @@ def evaluate_clf(f_predict, x, y, class_noise):
 
     # metrics for in-dist data
     in_labels = np.unique(y)
-    in_labels = np.delete(in_labels, class_noise)
+    in_labels = np.delete(in_labels, class_ood)
     in_f1_macro = metrics.f1_score(y_true=y, y_pred=pred, labels=in_labels, average='macro', zero_division=0)
     in_f1_weighted = metrics.f1_score(y_true=y, y_pred=pred, labels=in_labels, average='weighted', zero_division=0)
 
     # metrics for the ood class
-    ood_p = metrics.precision_score(y_true=y, y_pred=pred, labels=[class_noise], average=None, zero_division=0)[0]
-    ood_r = metrics.recall_score(y_true=y, y_pred=pred, labels=[class_noise], average=None, zero_division=0)[0]
-    ood_f1 = metrics.f1_score(y_true=y, y_pred=pred, labels=[class_noise], average=None, zero_division=0)[0]
+    ood_p = metrics.precision_score(y_true=y, y_pred=pred, labels=[class_ood], average=None, zero_division=0)[0]
+    ood_r = metrics.recall_score(y_true=y, y_pred=pred, labels=[class_ood], average=None, zero_division=0)[0]
+    ood_f1 = metrics.f1_score(y_true=y, y_pred=pred, labels=[class_ood], average=None, zero_division=0)[0]
 
     # printing results
     print(f"prediction time:  {run_time}  seconds")
@@ -105,21 +125,6 @@ def evaluate_clf(f_predict, x, y, class_noise):
     print(f"  f1-macro: {in_f1_macro:.4f} - f1-weighted: {in_f1_weighted:.4f}")
     print("ood")
     print(f"  p: {ood_p:.4f} - r: {ood_r:.4f} - f1: {ood_f1:.4f}")
-
-    return
-
-
-def print_size_percentage(name_str, n_samples, n_total):
-    percentage = (n_samples / n_total) * 100
-    print(name_str, ":   number ", n_samples, " percentage ", percentage)
-    return percentage
-
-
-def print_parameters(args):
-    print("Parameters:")
-    for k, v in vars(args).items():
-        print(k, " " * (20 - len(k)), v)
-    print("-------------------------------------------------------------------------------")
 
     return
 
