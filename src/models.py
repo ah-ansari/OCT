@@ -188,7 +188,7 @@ def make_model_tree(x: np.ndarray, y: np.ndarray, n_classes: int, max_depth: int
 
     # class weights
     if extra_ood_class is True:
-        print("robust")
+        print("The model has OOD as extra class")
         y_w = y[y != np.max(y)]
         c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_w), y=y_w)
         c_w /= np.sum(c_w)

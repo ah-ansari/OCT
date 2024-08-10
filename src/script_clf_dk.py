@@ -127,8 +127,8 @@ x_ood = np.array(x_ood)
 print("OOD points created")
 
 
-def make_model_dont_know(x, y, batch_size=64, lr=0.001, robust=False, apply_weight=True, esp=20,
-                         device=torch.device('cpu'), verbose=False):
+def make_model_dont_know(x, y, batch_size=64, lr=0.001, apply_weight=True, esp=20, device=torch.device('cpu'),
+                         verbose=False):
     n_inputs = x.shape[1]
     n_classes = np.unique(y).size
 
@@ -150,17 +150,11 @@ def make_model_dont_know(x, y, batch_size=64, lr=0.001, robust=False, apply_weig
                                              pin_memory=True)
 
     # class weights
-    if robust is True:
-        print("robust")
-        y_w = y[y != np.max(y)]
-        c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_w), y=y_w)
-        c_w /= np.sum(c_w)
-        c_w = np.append(c_w, 1)
-        c_w = torch.Tensor(c_w).to(device)
-    else:
-        c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y)
-        c_w /= np.sum(c_w)
-        c_w = torch.Tensor(c_w).to(device)
+    y_w = y[y != np.max(y)]
+    c_w = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_w), y=y_w)
+    c_w /= np.sum(c_w)
+    c_w = np.append(c_w, 1)
+    c_w = torch.Tensor(c_w).to(device)
 
     model = models.DNNModel(n_inputs, n_classes, layers=[32, 16, 8])
     model.apply(models.init_weights)
@@ -269,7 +263,7 @@ x_dk = np.concatenate((x_train, x_ood), axis=0)
 y_dk = np.concatenate((y_train, np.full(x_ood.shape[0], class_ood)), axis=0)
 
 
-model, predictor = make_model_dont_know(x=x_dk, y=y_dk, robust=True, batch_size=args.batch_size, lr=args.lr,
+model, predictor = make_model_dont_know(x=x_dk, y=y_dk, batch_size=args.batch_size, lr=args.lr,
                                         apply_weight=True, esp=args.esp, device=device)
 
 
