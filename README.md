@@ -70,9 +70,9 @@ python src/script_clf_original.py --dataset <dataset_name> --setting <ood_classD
 For the counterfactual experiment, first run the code for our OCT model, as well as the Original and DK models, using the configuration `--setting all_in_dist` and `--save` to store the trained classification models in the `saves_model/` folder:
 
 ```
-python src/script_clf_oct.py --dataset <dataset_name> -setting all_in_dist --save
-python src/script_clf_original.py --dataset <dataset_name> -setting all_in_dist --save
-python src/script_clf_dk.py --dataset <dataset_name> -setting all_in_dist --save
+python src/script_clf_oct.py --dataset <dataset_name> --setting all_in_dist --save
+python src/script_clf_original.py --dataset <dataset_name> --setting all_in_dist --save
+python src/script_clf_dk.py --dataset <dataset_name> --setting all_in_dist --save
 ```
 
 Then, run the specific counterfactual method script:
