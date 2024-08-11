@@ -46,6 +46,7 @@ python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_
 
 - **`[--save]`** *(optional)*: Saves the trained model to the `saves_model/` folder if specified.
 
+For more information on other parameters, please refer to the Python file.
 
 **Examples:**
 - To evaluate the OCT model on the Adult dataset using Test Setting I, with class 0 considered as OOD:
@@ -66,7 +67,7 @@ python src/script_clf_original.py --dataset <dataset_name> --setting <ood_classD
 
 ## Counterfactual Explanations Experiment
 
-For the counterfactual experiment, first run the code for our OCT model, Original, and DK with `-setting all_in_dist` option and `--save` to save the classification models in the `saves_model/` folder:
+For the counterfactual experiment, first run the code for our OCT model, as well as the Original and DK models, using the configuration `--setting all_in_dist` and `--save` to store the trained classification models in the `saves_model/` folder:
 
 ```
 python src/script_clf_oct.py --dataset <dataset_name> -setting all_in_dist --sigma 0.01 --p 0.1 --n 2 --save
@@ -74,11 +75,11 @@ python src/script_clf_original.py --dataset <dataset_name> -setting all_in_dist 
 python src/script_clf_dk.py --dataset <dataset_name> -setting all_in_dist --save
 ```
 
-Then, run the counterfactual method experiment file:
+Then, run the specific counterfactual method script:
 ```
 python src/script_cf_xxx.py --dataset <dataset_name>
 ```
-`xxx` denote the name of the counterfactual algorithm: gd, gs, cchvae, revise (e.g., `script_cf_gd.py` is the file to run the experiment for gd counterfactual algorithm).
+`xxx` denote the name of the counterfactual algorithm: gd, gs, cchvae, revise. For example, to run the experiment with the gd counterfactual algorithm, use `script_cf_gd.py`.
 
 
 
