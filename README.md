@@ -5,7 +5,7 @@ The official implementation of the paper "Out-of-Distribution Aware Classificati
 
 ## Requirements
 
-To install requirements:
+To install the requirements, run:
 
 ```setup
 pip install -r requirements.txt
