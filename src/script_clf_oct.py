@@ -153,5 +153,5 @@ print("time model training:", model_time)
 
 # Saving the model
 if args.save:
-    save_path = f"saves_model/{args.dataset}_{args.i}"
+    save_path = f"saves_model/{args.dataset}"
     torch.save(model_oct.state_dict(), save_path + "_oct")

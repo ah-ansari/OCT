@@ -309,7 +309,7 @@ for ood_type, x_eval in x_evals.items():
     print("")
 
 
-# saving the model
-if args.save is True:
-    save_path = "saves_model/" + args.dataset + "_" + str(args.i)
+# Saving the model
+if args.save:
+    save_path = f"saves_model/{args.dataset}"
     torch.save(model.state_dict(), save_path + "_dk")

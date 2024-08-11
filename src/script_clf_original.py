@@ -270,7 +270,7 @@ print("time original: ", model_time)
 print("time if: ", if_time)
 print("time pipeline: ", pipeline_time)
 
-# saving the model
+# Saving the model
 if args.save is True:
-    save_path = "saves_model/" + args.dataset + "_" + str(args.i)
+    save_path = f"saves_model/{args.dataset}"
     torch.save(model_original.state_dict(), save_path + "_original")
