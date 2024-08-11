@@ -49,11 +49,11 @@ python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_
 For more information on other parameters, please refer to the Python file.
 
 **Examples:**
-- To evaluate the OCT model on the Adult dataset using Test Setting I, with class 0 considered as OOD:
+- To evaluate OCT on the Adult dataset using Test Setting I (ood_class) with class 0 considered as OOD:
   ```
   python src/script_clf_oct.py --dataset adult --setting ood_class0 --sigma 0.01 --p 0.1 --n 2
   ```
-- To evaluate the model on the Cover dataset using Test Setting II (with all classes considered as in-distribution) on fold 0:
+- To evaluate OCT on the Cover dataset using Test Setting II (all_in_dist) on fold 0:
   ```
   python src/script_clf_oct.py --dataset cover --setting all_in_dist --fold 0 --sigma 0.01 --p 0.1 --n 2
   ```
@@ -70,7 +70,7 @@ python src/script_clf_original.py --dataset <dataset_name> --setting <ood_classD
 For the counterfactual experiment, first run the code for our OCT model, as well as the Original and DK models, using the configuration `--setting all_in_dist` and `--save` to store the trained classification models in the `saves_model/` folder:
 
 ```
-python src/script_clf_oct.py --dataset <dataset_name> -setting all_in_dist --sigma 0.01 --p 0.1 --n 2 --save
+python src/script_clf_oct.py --dataset <dataset_name> -setting all_in_dist --save
 python src/script_clf_original.py --dataset <dataset_name> -setting all_in_dist --save
 python src/script_clf_dk.py --dataset <dataset_name> -setting all_in_dist --save
 ```
@@ -85,4 +85,4 @@ python src/script_cf_xxx.py --dataset <dataset_name>
 
 ## Libraries
 
-For the counterfactual experiment, we utilized the [CARLA](https://github.com/carla-recourse/CARLA) and [DiCE-ML](https://github.com/interpretml/DiCE) libraries. The source code for these libraries is already included in the src folder, so no additional setup is required. We made minor modifications to the original code, primarily altering the stopping condition in the counterfactual search from `prediction=[0, 1]` to `prediction=[0,1,0]`. Detailed information about these modifications can be found in `src/carla/modified_files.txt` for the CARLA library and `src/dice_ml/modified_files.txt` for the DiCE-ML library.
+For the counterfactual experiment, we utilized the [CARLA](https://github.com/carla-recourse/CARLA) and [DiCE-ML](https://github.com/interpretml/DiCE) libraries. The source code for these libraries is already included in the src folder, so no additional setup is required. We made minor modifications to the original code, primarily altering the stopping condition in the counterfactual search from `prediction=[0, 1]` to `prediction=[0,1,0]` to account for the additional OOD class in the OCT model. Detailed information about these modifications can be found in `src/carla/modified_files.txt` for the CARLA library and `src/dice_ml/modified_files.txt` for the DiCE-ML library.
