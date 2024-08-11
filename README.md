@@ -25,7 +25,7 @@ python src/script_prepare_data.py
 To train and evaluate our proposed OCT model, run:
 
 ```
-python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_in_dist> [--fold <int>] [--sigma <float>] [--p <float>] [--n <int>]
+python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_in_dist> [--fold <int>] [--sigma <float>] [--p <float>] [--n <int>] [--save]
 ```
 
 **Parameters:**
@@ -33,10 +33,10 @@ python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_
 - **`--dataset <dataset_name>`**: Specifies the dataset to be used.
 
 - **`--setting <ood_classD|all_in_dist>`**: Defines the evaluation setting.
-  - **`ood_classD`**: Used for Test Setting I, where a specific class is treated as OOD. Replace `D` with the class number to specify which class is considered OOD.
+  - **`ood_classD`**: Used for Test Setting I, where one of the classes is treated as OOD. Replace `D` with the class number to specify which class is considered OOD (e.g., `ood_class0` indicates class 0 is considered OOD).
   - **`all_in_dist`**: Used for Test Setting II, where all classes are considered in-distribution, and synthesized OOD sets are used for evaluation.
 
-- **`--fold <int>`** *(optional)*: Specifies the fold number for datasets like Cover, Dilbert, and Jannis that require cross-validation. This argument is optional and should be provided only when cross-validation is needed.
+- **`--fold <int>`** *(optional)*: Specifies the fold number for Cover, Dilbert, and Jannis datasets, for which cross-validation is applied. This argument should not be set for Adult, Compas, GMSC, and Heloc datasets, where cross-validation is not applied.
 
 - **`[--sigma <float>]`** *(optional)*: Specifies the sigma value for applying Gaussian noise to continuous features. Default is `0.01`.
 
@@ -44,18 +44,21 @@ python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_
 
 - **`[--n <int>]`** *(optional)*: Determines the number of OOD samples, expressed as a multiplier (`n * size of in-distribution data`). Default is `2`.
 
+- **`[--save]`** *(optional)*: Saves the trained model to the `saves_model/` folder if specified.
+
 
 **Examples:**
-- To evaluate OCT on the Adult dataset using Test Setting I with class 0 considered as OOD:
+- To evaluate the OCT model on the Adult dataset using Test Setting I, with class 0 considered as OOD:
   ```
   python src/script_clf_oct.py --dataset adult --setting ood_class0 --sigma 0.01 --p 0.1 --n 2
   ```
-- To evaluate the model on the Cover dataset using Test Setting II (all classes as in-distribution) on fold 0:
+- To evaluate the model on the Cover dataset using Test Setting II (with all classes considered as in-distribution) on fold 0:
   ```
   python src/script_clf_oct.py --dataset cover --setting all_in_dist --fold 0 --sigma 0.01 --p 0.1 --n 2
   ```
 
-To train and evaluate Original model, run:
+
+To train and evaluate the Original model, run:
 ```
 python src/script_clf_original.py --dataset <dataset_name> --setting <ood_classD|all_in_dist> [--fold <int>]
 ```
