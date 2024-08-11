@@ -38,7 +38,7 @@ python src/script_clf_oct.py --dataset <dataset_name> --setting <ood_classD|all_
 
 - **`--fold <int>`** *(optional)*: Specifies the fold number for Cover, Dilbert, and Jannis datasets, for which cross-validation is applied. This argument should not be set for Adult, Compas, GMSC, and Heloc datasets, where cross-validation is not applied.
 
-- **`[--sigma <float>]`** *(optional)*: Specifies the sigma value for applying Gaussian noise to continuous features. Default is `0.01`.
+- **`[--sigma <float>]`** *(optional)*: Sets the standard deviation for Gaussian noise applied to continuous features. Default is `0.01`.
 
 - **`[--p <float>]`** *(optional)*: Sets the perturbation probability for categorical features. Default is `0.1`.
 
@@ -83,6 +83,6 @@ python src/script_cf_xxx.py --dataset <dataset_name>
 
 
 
-## Libraries
+## Counterfactual Libraries
 
 For the counterfactual experiment, we utilized the [CARLA](https://github.com/carla-recourse/CARLA) and [DiCE-ML](https://github.com/interpretml/DiCE) libraries. The source code for these libraries is already included in the src folder, so no additional setup is required. We made minor modifications to the original code, primarily altering the stopping condition in the counterfactual search from `prediction=[0, 1]` to `prediction=[0,1,0]` to account for the additional OOD class in the OCT model. Detailed information about these modifications can be found in `src/carla/modified_files.txt` for the CARLA library and `src/dice_ml/modified_files.txt` for the DiCE-ML library.
