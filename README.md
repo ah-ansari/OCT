@@ -1,6 +1,6 @@
 # OCT
 
-The official implementation of the paper "Out-of-Distribution Aware Classification for Tabular Data", presented in CIKM 2024.
+The source code for the paper **Out-of-Distribution Aware Classification for Tabular Data**, published at CIKM 2024.
 
 
 ## Requirements
